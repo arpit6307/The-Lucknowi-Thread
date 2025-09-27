@@ -155,7 +155,7 @@ padding: 0.6rem 1.2rem;
     padding: 0.5rem 1.2rem !important;
     transition: all 0.3s ease;
     background-color: var(--primary);
-    color: white !important;
+    color: rgb(49, 49, 49) !important;
     border: none;
     line-height: 1.5;
 }
