@@ -1,0 +1,44 @@
+/* ==================
+   STAR RATING (REDESIGNED)
+===================== */
+
+.star-rating-v2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px; /* Space between stars */
+}
+
+.star-label {
+  cursor: pointer;
+}
+
+.star-input {
+  display: none; /* Hide the actual radio button */
+}
+
+.star-svg {
+  width: 28px;
+  height: 28px;
+  transition: all 0.2s ease-in-out;
+}
+
+.star-svg path {
+  stroke: #ffc107; /* Star outline color */
+  stroke-width: 1px;
+}
+
+/* --- Interactive States --- */
+
+/* When a star is selected (checked) or hovered */
+.star-input:checked ~ .star-svg,
+.star-label:hover ~ .star-label .star-svg,
+.star-label:hover .star-svg {
+  fill: #ffc107; /* Fill the star with color */
+  transform: scale(1.15); /* Slightly enlarge the star */
+}
+
+/* Keep previous stars filled on hover */
+.star-rating-v2:hover .star-label:hover ~ .star-label .star-svg {
+  fill: #e4e5e9; /* Unfill stars after the hovered one */
+  transform: scale(1);
+}
