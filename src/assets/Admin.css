@@ -1,0 +1,821 @@
+/* ===================================================================
+   ADMIN PANEL STYLES (V7) - FINAL POLISHED VERSION
+   THEME: The Artisan's Desk
+   PURPOSE: Yeh file poore admin panel ko style karti hai. Ismein ek
+            collapsible desktop sidebar (hover tooltips ke saath) aur
+            ek polished mobile slide-in menu shaamil hai.
+=================================================================== */
+
+
+/* =================================
+   1. MAIN LAYOUT & STRUCTURE
+==================================== */
+
+.admin-container-v4 {
+  display: flex;
+  background-color: var(--light); /* Content area ka background color */
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  --sidebar-width: 260px;
+  --sidebar-width-collapsed: 90px; /* Collapse hone par sidebar ki width */
+}
+
+/* Content area jo sidebar ke right mein dikhta hai */
+.admin-main-content {
+  flex-grow: 1; /* Bachi hui saari jagah le lega */
+  display: flex;
+  flex-direction: column;
+  margin-left: var(--sidebar-width);
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Har admin page ka main content area */
+.admin-page-content {
+  padding: 2.5rem;
+  flex-grow: 1;
+}
+
+.admin-page-content h3 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 2rem;
+  color: var(--dark);
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color-soft);
+}
+
+
+/* =================================
+   2. SIDEBAR NAVIGATION (EXPANDED)
+==================================== */
+
+.admin-sidebar-v4 {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background-color: var(--card-bg);
+  border-right: 1px solid var(--border-color-soft);
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 1030;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Sidebar ka header (Logo aur Title) */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding: 0 0.5rem;
+  height: 40px;
+  flex-shrink: 0; /* Ensures header doesn't shrink */
+}
+
+.admin-brand-v4 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.admin-brand-v4 .brand-logo-char {
+  background-color: var(--primary);
+  color: var(--bg-color);
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.admin-brand-v4:hover .brand-logo-char {
+    transform: rotate(10deg);
+}
+
+.admin-brand-v4 .brand-text {
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: var(--heading-color);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Sidebar ke navigation links */
+.admin-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-grow: 1;
+  overflow: hidden;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* Custom scrollbar styles */
+.admin-sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+.admin-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 10px;
+}
+.admin-sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+
+.admin-sidebar-nav hr {
+  margin: 1rem 0;
+  border-color: var(--border-color-soft);
+  opacity: 0.5;
+}
+
+.admin-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  color: var(--secondary);
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+  position: relative;
+}
+
+.admin-sidebar-link:hover {
+  background-color: var(--light);
+  color: var(--primary);
+}
+
+.admin-sidebar-link.active {
+  background-color: var(--primary);
+  color: var(--bg-color);
+  box-shadow: 0 5px 15px -5px var(--primary);
+}
+
+.admin-sidebar-link.active svg {
+  stroke: var(--bg-color);
+}
+
+.admin-sidebar-link span {
+    opacity: 1;
+    transition: opacity 0.2s ease, width 0.2s ease;
+}
+
+/* Sidebar ka footer area */
+.sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    flex-shrink: 0;
+    padding-top: 1rem;
+}
+
+.back-to-home-btn-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: none;
+  flex-grow: 1;
+  white-space: nowrap;
+  position: relative;
+}
+
+.back-to-home-btn-sidebar:hover {
+  background-color: var(--light);
+}
+
+.sidebar-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    position: relative;
+}
+.sidebar-toggle-btn:hover {
+    background-color: var(--light);
+    color: var(--primary);
+}
+
+
+/* =================================
+   3. COLLAPSED SIDEBAR STYLES (DESKTOP)
+==================================== */
+
+.admin-container-v4.sidebar-collapsed .admin-main-content {
+  margin-left: var(--sidebar-width-collapsed);
+}
+
+.admin-container-v4.sidebar-collapsed .admin-sidebar-v4 {
+    width: var(--sidebar-width-collapsed);
+    padding: 1.5rem 0.5rem;
+}
+
+.admin-container-v4.sidebar-collapsed .admin-brand-v4 .brand-text,
+.admin-container-v4.sidebar-collapsed .admin-sidebar-link span,
+.admin-container-v4.sidebar-collapsed .back-to-home-btn-sidebar span {
+    opacity: 0;
+    width: 0;
+    pointer-events: none;
+}
+
+.admin-container-v4.sidebar-collapsed .sidebar-header,
+.admin-container-v4.sidebar-collapsed .admin-sidebar-link,
+.admin-container-v4.sidebar-collapsed .back-to-home-btn-sidebar {
+    justify-content: center;
+}
+
+.admin-container-v4.sidebar-collapsed .back-to-home-btn-sidebar {
+    flex-grow: 0;
+}
+
+.admin-container-v4.sidebar-collapsed .sidebar-toggle-btn {
+    transform: rotate(180deg);
+}
+
+.admin-container-v4.sidebar-collapsed .sidebar-footer {
+    flex-direction: column-reverse;
+    gap: 1rem;
+}
+
+.admin-container-v4.sidebar-collapsed .admin-sidebar-link::after,
+.admin-container-v4.sidebar-collapsed .sidebar-footer [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 15px);
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    background-color: var(--dark);
+    color: var(--light);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 1040;
+}
+
+.admin-container-v4.sidebar-collapsed .admin-sidebar-link:hover::after,
+.admin-container-v4.sidebar-collapsed .sidebar-footer [data-tooltip]:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+    transition-delay: 0.2s;
+}
+
+
+/* =================================
+   4. MOBILE-SPECIFIC STYLES (UPDATED)
+==================================== */
+
+.admin-mobile-header { display: none; }
+.admin-backdrop { display: none; }
+.sidebar-close-btn { display: none; }
+
+@media (max-width: 991px) {
+  .admin-sidebar-v4 {
+    transform: translateX(calc(-1 * var(--sidebar-width)));
+  }
+  .admin-sidebar-v4.open {
+    transform: translateX(0);
+    box-shadow: 5px 0px 30px rgba(0,0,0,0.1);
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: transparent;
+    border-radius: 50%;
+    transition: background-color 0.2s ease, transform 0.3s ease;
+    cursor: pointer;
+    border: none;
+    color: var(--secondary);
+  }
+  .sidebar-close-btn:hover {
+    background-color: var(--light);
+    transform: rotate(90deg);
+    color: var(--primary);
+  }
+
+  .admin-backdrop {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1020;
+    backdrop-filter: blur(2px);
+  }
+
+  .admin-main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .admin-mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 65px;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color-soft);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+ 
+  .mobile-menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+ 
+  .admin-brand-v4-mobile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-decoration: none;
+  }
+
+  .admin-brand-v4-mobile .brand-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--heading-color);
+    white-space: nowrap;
+  }
+
+  .admin-page-content {
+    padding: 1.5rem;
+  }
+ 
+  .sidebar-toggle-btn {
+      display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-mobile-header { padding: 0 1rem; }
+  .admin-page-content { padding: 1rem; }
+
+  .admin-brand-v4-mobile .brand-text {
+      font-size: 1rem;
+  }
+}
+
+
+/* =================================
+   5. SHARED COMPONENTS
+==================================== */
+
+.admin-widget { background-color: var(--card-bg); border: none; border-radius: 12px; box-shadow: 0 4px 20px -5px var(--card-shadow); transition: transform 0.3s ease, box-shadow 0.3s ease; height: 100%; }
+.admin-widget:hover { transform: translateY(-5px); box-shadow: 0 8px 25px -5px var(--card-shadow); }
+body[data-theme='dark'] .admin-widget:hover { box-shadow: 0 8px 25px -5px rgba(0,0,0,0.3); }
+.admin-widget .card-header { background-color: transparent; border-bottom: 1px solid var(--border-color-soft); font-weight: 600; font-size: 1.1rem; padding: 1rem 1.5rem; }
+.table { border-collapse: separate; border-spacing: 0 10px; margin-top: -10px; }
+.table thead th { background-color: transparent !important; border: none !important; color: var(--secondary); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; padding: 0.75rem 1.5rem; }
+.table tbody tr { background-color: var(--card-bg); box-shadow: 0 2px 10px -2px var(--card-shadow); border-radius: 10px; transition: box-shadow 0.3s ease, transform 0.3s ease; }
+.table tbody tr:hover { box-shadow: 0 5px 15px -3px var(--card-shadow); transform: translateY(-2px); }
+.table tbody td { vertical-align: middle; padding: 1rem 1.5rem; border: none; }
+.table tbody tr td:first-child { border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+.table tbody tr td:last-child { border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+.accordion-header-sm button { font-size: 0.8rem !important; padding: 0.5rem 1rem !important; }
+
+/* =======================================================
+   6. ANIMATED BRAND TEXT (NEW) - SEAMLESS LOOP
+========================================================== */
+
+.admin-brand-v4 .brand-text,
+.admin-brand-v4-mobile .brand-text {
+  overflow: hidden;
+  white-space: nowrap;
+  display: inline-block;
+  vertical-align: middle;
+  max-width: 100%;
+}
+
+.brand-text-inner {
+  display: inline-block;
+  animation: marquee 8s linear infinite;
+  text-align: left;
+}
+
+.admin-container-v4.sidebar-collapsed .brand-text-inner {
+    animation: none;
+}
+
+/* Keyframes ko update kiya gaya hai seamless loop ke liye */
+@keyframes marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* =================================================================
+ * JARVIS AI Assistant Styles (Integrated with Admin.css theme)
+ * =================================================================
+ * Key Design Principles:
+ * 1. No visible borders (using box-shadow for elevation).
+ * 2. Responsive design (mobile-first).
+ * 3. Clean, modern, and high-contrast look.
+ * 4. Use of Admin theme colors (assuming dark primary/secondary).
+ */
+
+/* --------------------------------------
+ * 1. Main Container & Layout
+ * -------------------------------------- */
+.jarvis-ai-container {
+    /* Full view height within the main admin content area */
+    height: 100%; 
+    display: flex;
+    flex-direction: column;
+    padding: 0; /* Remove default padding, use wrapper padding */
+}
+
+.jarvis-content-wrapper {
+    /* Use Admin panel's clean background, flex for overall layout */
+    background-color: var(--bs-body-bg);
+    min-height: calc(100vh - 56px - 20px); /* Adjust based on navbar/footer if needed */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05); /* Soft elevation without border */
+    border-radius: 0.5rem; /* Match Admin panel card styling */
+}
+
+/* --------------------------------------
+ * 2. Header and Avatar
+ * -------------------------------------- */
+.jarvis-header {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    background-color: var(--bs-light-bg-subtle); /* Light contrast background for header */
+    border-bottom: 1px solid var(--bs-border-color-translucent); /* Subtle divider */
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+}
+
+.jarvis-header h1 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: var(--bs-heading-color);
+}
+
+.jarvis-header p {
+    font-size: 0.9rem;
+    margin: 0;
+    color: var(--bs-secondary-color);
+}
+
+/* Common Avatar Styling */
+.avatar-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+/* JARVIS Specific Icon Styling */
+.jarvis-avatar {
+    background-color: var(--bs-primary); /* Primary color background */
+    color: white; /* White icon color */
+}
+
+/* User Icon Styling */
+.user-message .avatar-icon {
+    background-color: var(--bs-body-color); /* User icon color (e.g., text color) */
+    color: var(--bs-body-bg); /* Inverse icon color */
+}
+
+
+/* --------------------------------------
+ * 3. Chat Window and Messages
+ * -------------------------------------- */
+.jarvis-chat-window {
+    flex-grow: 1; /* Occupy all available space */
+    overflow-y: auto; /* Scrollable chat area */
+    padding: 1.5rem;
+    padding-bottom: 0; /* Input area ke liye space manage karein */
+}
+
+.jarvis-messages {
+    display: flex;
+    flex-direction: column;
+}
+
+.message-container {
+    display: flex;
+    margin-bottom: 1rem;
+    /* Remove all borders from here */
+}
+
+.message-bubble {
+    max-width: 80%;
+    padding: 0.75rem 1rem;
+    border-radius: 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    /* Soft shadow for bubble effect, better than border */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); 
+}
+
+/* User Message Styling */
+.user-message {
+    justify-content: flex-end; /* Align right */
+}
+
+.user-message .message-bubble {
+    background-color: var(--bs-primary);
+    color: white;
+    /* Curved edges for bubble */
+    border-bottom-right-radius: 0.25rem; 
+}
+
+/* AI Message Styling (JARVIS) */
+.ai-message {
+    justify-content: flex-start; /* Align left */
+}
+
+.ai-message .message-bubble {
+    background-color: var(--bs-light-bg-subtle);
+    color: var(--bs-body-color);
+    /* Curved edges for bubble */
+    border-bottom-left-radius: 0.25rem;
+}
+
+/* HTML content within message (especially for strong and lists) */
+.message-bubble p { margin-bottom: 0; }
+.message-bubble strong { font-weight: 700; color: var(--bs-primary); } 
+.message-bubble ul { 
+    padding-left: 20px; 
+    margin-top: 0.5rem; 
+    margin-bottom: 0;
+}
+.message-bubble li { margin-bottom: 0.25rem; }
+
+/* Loading Bubble (Three dots) */
+.loading-bubble {
+    display: flex;
+    align-items: center;
+    background-color: var(--bs-light-bg-subtle);
+    padding: 0.5rem 1rem;
+}
+.loading-bubble span {
+    width: 6px;
+    height: 6px;
+    margin: 0 3px;
+    background-color: var(--bs-secondary-color);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.loading-bubble span:nth-child(1) { animation-delay: -0.32s; }
+.loading-bubble span:nth-child(2) { animation-delay: -0.16s; }
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}
+
+/* --------------------------------------
+ * 4. Input Area and Quick Actions
+ * -------------------------------------- */
+.jarvis-input-area {
+    padding: 1.5rem;
+    padding-top: 1rem;
+    background-color: var(--bs-body-bg); /* Match main background */
+    border-top: 1px solid var(--bs-border-color-translucent); /* Subtle divider */
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+}
+
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.quick-action-btn {
+    background-color: var(--bs-tertiary-bg); /* Soft background */
+    color: var(--bs-secondary-color); /* Secondary text color */
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 1.5rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quick-action-btn:hover {
+    background-color: var(--bs-primary);
+    color: white;
+}
+
+.jarvis-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.jarvis-input {
+    flex-grow: 1;
+    /* Match Admin.css form-control style */
+    border: 1px solid var(--bs-border-color);
+    box-shadow: none; /* Remove default bootstrap shadow */
+    border-radius: 0.5rem;
+}
+
+.jarvis-input:focus {
+    border-color: var(--bs-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.jarvis-send-btn {
+    /* Match the theme button style */
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+    border-radius: 0.5rem;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jarvis-send-btn:hover {
+    background-color: var(--bs-primary-hover); /* Assuming a lighter hover color */
+    border-color: var(--bs-primary-hover);
+}
+
+/* --------------------------------------
+ * 5. Mobile Responsiveness
+ * -------------------------------------- */
+@media (max-width: 768px) {
+    .jarvis-content-wrapper {
+        min-height: 100vh;
+        border-radius: 0;
+    }
+
+    .jarvis-header {
+        padding: 1rem;
+        border-radius: 0;
+    }
+
+    .jarvis-chat-window {
+        padding: 1rem;
+        padding-bottom: 0;
+    }
+
+    .message-bubble {
+        max-width: 90%;
+    }
+
+    .jarvis-input-area {
+        padding: 1rem;
+        padding-top: 0.75rem;
+        border-radius: 0;
+    }
+
+    .quick-actions {
+        /* Mobile par quick actions ko vertical stack kar sakte hain agar space kam ho */
+        /* display: grid;
+        grid-template-columns: repeat(2, 1fr); */
+        /* ya sirf wrap rehne dein */
+    }
+}
+
+/* --- AdminProfileSettings.jsx Styles --- */
+
+/* Page Title Matching other Admin Pages */
+.admin-page-title {
+    font-weight: 600;
+    color: var(--bs-heading-color);
+}
+
+/* Profile Header Card Styling */
+.profile-header-card {
+    background: var(--bs-card-bg); /* Use card background */
+    border: none; /* Borderless */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Soft shadow for elevation */
+}
+
+.profile-avatar-wrapper {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.profile-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: 3px solid var(--bs-primary); /* Primary color ring */
+}
+
+.change-avatar-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.5rem;
+    transform: translate(5px, 5px); /* Move button slightly out */
+}
+
+/* Tab Navigation Styling */
+.profile-tabs .nav-link {
+    font-weight: 500;
+    color: var(--bs-secondary-color);
+    border: none;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    padding: 1rem 1.5rem;
+}
+
+.profile-tabs .nav-link.active {
+    color: var(--bs-primary);
+    background-color: transparent;
+    border-bottom: 3px solid var(--bs-primary); /* Active tab indicator */
+}
+
+.profile-tabs .nav-item:hover .nav-link:not(.active) {
+    color: var(--bs-primary-hover); /* Light hover effect */
+}
+
+/* Card Section inside Tabs */
+.profile-card-section {
+    border: none; /* Inner card should also be borderless */
+    box-shadow: none; /* Remove shadow from inner card */
+    background: transparent; /* Transparent background to blend with tab area */
+}
+
+.profile-card-section .card-body {
+    padding: 0; /* Remove padding since the tab already has padding */
+}
+
+/* Input/Form styling (optional, relies on standard Bootstrap form-control) */
+.form-control:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .profile-header-card .card-body {
+        flex-direction: column;
+        text-align: center;
+    }
+    .profile-avatar-wrapper {
+        margin-right: 0 !important;
+        margin-bottom: 1rem;
+    }
+}

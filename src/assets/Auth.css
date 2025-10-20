@@ -1,0 +1,293 @@
+/* =================================
+   AUTH PAGES - MINIMALIST REDESIGN V5 (Navbar Spacing Fixed)
+==================================== */
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+  padding: 2rem;
+  
+  /* === YEH BADLAV KIYA GAYA HAI === */
+  padding-top: 120px; /* Navbar ke liye upar se space */
+  padding-bottom: 40px; /* Niche bhi thoda space, balance ke liye */
+  box-sizing: border-box; /* Padding ko height mein shaamil karne ke liye */
+  /* === YAHAN TAK === */
+
+  background-color: var(--light);
+  /* Subtle background pattern */
+  background-image:
+    radial-gradient(var(--secondary) 1px, transparent 1px),
+    radial-gradient(var(--secondary) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: 0 0, 20px 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 450px;
+  padding: 2.5rem;
+  background-color: var(--card-bg);
+  border-radius: 20px;
+  box-shadow: 0 15px 40px var(--card-shadow);
+  border: 1px solid var(--border-color-soft);
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.auth-card h2 {
+  font-weight: 700;
+  color: var(--heading-color);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.5rem;
+  text-align: center;
+}
+
+.auth-card p.text-muted {
+  font-size: 1.05rem;
+  color: var(--secondary);
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* --- Redesigned Form Inputs with Floating Label --- */
+.form-group-v2 {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.form-group-v2 .form-control {
+  height: 55px;
+  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  padding: 1.5rem 1rem 0.5rem; /* Space for the label */
+  transition: border-color 0.3s ease;
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  width: 100%;
+}
+
+.form-group-v2 .form-label {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  color: var(--secondary);
+  pointer-events: none;
+  transition: all 0.2s ease-out;
+}
+
+.form-group-v2 .form-control:focus + .form-label,
+.form-group-v2 .form-control:not(:placeholder-shown) + .form-label {
+  top: 0.5rem;
+  left: 1rem;
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 500;
+  background-color: var(--card-bg);
+  padding: 0 5px;
+}
+
+.form-group-v2 .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: none;
+  background-color: var(--card-bg);
+}
+
+/* --- Password Toggle Button --- */
+.password-input-wrapper {
+    position: relative;
+}
+.password-input-wrapper .form-control {
+    padding-right: 3.5rem; /* Make space for the icon */
+}
+
+.password-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: var(--secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+}
+.password-toggle-btn:hover {
+    color: var(--primary);
+    background-color: var(--light);
+}
+
+
+/* --- Buttons and Links --- */
+.btn-custom {
+  padding: 0.9rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.form-link {
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  cursor: pointer;
+}
+.form-link:hover {
+  color: var(--primary);
+}
+
+.auth-switch-link {
+  color: var(--secondary);
+}
+
+.auth-switch-link a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 600;
+  position: relative;
+}
+.auth-switch-link a::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  transform: scaleX(0);
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: var(--primary);
+  transform-origin: bottom right;
+  transition: transform 0.25s ease-out;
+}
+.auth-switch-link a:hover::after {
+  transform: scaleX(1);
+  transform-origin: bottom left;
+}
+
+/* --- Feedback Messages --- */
+.auth-message {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  border-left: 5px solid;
+  animation: fade-in-up 0.5s ease-out;
+}
+
+.auth-message.success {
+  background-color: var(--success-soft);
+  border-color: #22c55e;
+  color: var(--success-dark);
+}
+
+.auth-message.error {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+body[data-theme='dark'] .auth-message.error {
+  background-color: #450a0a;
+  border-color: #f87171;
+  color: #fca5a5;
+}
+
+
+/* --- Divider and Social Login --- */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--secondary);
+  margin: 1.5rem 0;
+}
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-color-soft);
+}
+.divider:not(:empty)::before { margin-right: .5em; }
+.divider:not(:empty)::after { margin-left: .5em; }
+
+.btn-social {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 500;
+  border: 1px solid var(--input-border);
+  background: var(--card-bg);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  height: 50px;
+}
+.btn-social:hover {
+  background-color: var(--light);
+  border-color: var(--secondary);
+}
+.btn-social svg {
+    vertical-align: middle;
+}
+
+/* --- Forgot Password Modal --- */
+.forgot-password-modal .modal-content {
+    background-color: var(--card-bg);
+    border-radius: 20px;
+    border: 1px solid var(--border-color-soft);
+    box-shadow: 0 15px 40px var(--card-shadow);
+}
+.forgot-password-modal .modal-header {
+    border-bottom: 1px solid var(--border-color-soft);
+    padding: 1.5rem 2rem;
+}
+.forgot-password-modal .modal-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+.forgot-password-modal .modal-body {
+    padding: 2rem;
+}
+.forgot-password-modal .btn-close {
+    filter: var(--bs-btn-close-white-filter);
+}
+
+/* --- Animations --- */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 576px) {
+  .auth-container {
+    padding: 1rem;
+    align-items: flex-start; /* Align to top on mobile */
+    padding-top: 100px; /* Mobile par bhi navbar ke liye space */
+  }
+  .auth-card {
+    padding: 1.5rem;
+  }
+  .auth-card h2 {
+    font-size: 2rem;
+  }
+}
+
