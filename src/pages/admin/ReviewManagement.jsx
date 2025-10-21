@@ -1,8 +1,10 @@
+// src/pages/admin/ReviewManagement.jsx (FULL CODE)
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 // Bootstrap Components
 import { Container, Card, Alert, Table, Button, Badge, Row, Col, Form, InputGroup, Modal } from 'react-bootstrap';
 // Firebase
-import { collectionGroup, query, getDocs, doc, updateDoc, collection } from 'firebase/firestore'; // deleteDoc removed as we use soft delete
+import { collectionGroup, query, getDocs, doc, updateDoc, collection } from 'firebase/firestore'; 
 import { db } from '../../firebase';
 // Custom Components (assuming these exist and work)
 import CustomLoader from '../../components/CustomLoader';
@@ -142,12 +144,12 @@ const ReviewManagement = () => {
     // --- Memoized Filtering (Performance) ---
     const filteredReviews = useMemo(() => {
         return allReviews.filter(review => {
-            // If filter is 'all', show all except 'deleted' for main view
+            // FIX: Agar filter 'all' hai, toh sirf 'approved' ya 'pending' dikhega.
+            // Aur agar filter 'deleted' nahi hai, toh deleted reviews nahi dikhenge.
             const matchesStatus = filterStatus === 'all' 
-                ? review.status !== 'deleted' 
-                // Specific filter shows only that status (including 'deleted')
-                : review.status === filterStatus; 
-
+                ? (review.status === 'approved' || review.status === 'pending') 
+                : review.status === filterStatus && review.status !== 'deleted'; // Ensure 'deleted' is not viewed via filter
+                
             const lowerSearch = searchTerm.toLowerCase();
             const matchesSearch = searchTerm === '' ||
                 review.productName.toLowerCase().includes(lowerSearch) ||
@@ -169,22 +171,35 @@ const ReviewManagement = () => {
         }
     };
 
-    // **SOFT DELETE Feature**
+    // **SOFT DELETE Feature (Diagnostic Alert Added)**
     const handleDelete = async (review) => {
-        if (window.confirm(`Are you sure you want to move the review by ${review.authorName} to the Recycle Bin? It can be restored later.`)) {
+        // Native browser confirm dialogue (guaranteed to appear)
+        const confirmation = window.confirm(`CONFIRM: Move the review by ${review.authorName} to Recycle Bin (Soft Delete)?`);
+
+        if (confirmation) {
+            console.log(`ATTEMPTING SOFT DELETE FOR REVIEW ID: ${review.id}`); // Console log check
             try {
                 const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
                 // Soft Delete: Change status to 'deleted'
                 await updateDoc(reviewRef, { status: 'deleted' }); 
+                
+                window.alert("SUCCESS! Review successfully moved to Recycle Bin."); // Native Success Alert
                 fetchAllData(); 
             } catch(e) {
-                setError("Soft Delete failed.");
+                console.error("Soft Delete failed:", e);
+                const msg = e.message && e.message.includes('permission denied') 
+                    ? "FAILURE: PERMISSION DENIED! Check Firebase Admin Role setup." 
+                    : `Soft Delete failed. Error: ${e.message}`;
+                window.alert(msg); // Native Failure Alert
+                setError("Soft Delete failed. Check console.");
             }
         }
     };
     
-    // **RESTORE Feature**
+    // **RESTORE Feature** - NOTE: This function is not required here anymore, as it moves to RecycleBin.jsx
     const handleRestore = async (review) => {
+         // This function remains but will only be used if filtering is broken, 
+         // as restore logic primarily belongs to RecycleBin.jsx.
         if (window.confirm(`Are you sure you want to restore the review by ${review.authorName}? It will be set to Pending status.`)) {
             try {
                 const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
@@ -286,7 +301,7 @@ const ReviewManagement = () => {
             <Card className="shadow-lg border-0">
                 <Card.Header className="bg-light border-bottom d-flex justify-content-between align-items-center">
                     <Card.Title className="mb-0 text-dark">
-                        {filterStatus === 'deleted' ? 'Review Recycle Bin' : 'Live Review List'} 
+                        Live Review List 
                         ({filteredReviews.length} results)
                     </Card.Title>
                     <Badge bg="secondary" className="fs-6">Total Reviews: {allReviews.length}</Badge>
@@ -314,7 +329,7 @@ const ReviewManagement = () => {
                                 <option value="all">Filter by Status: Live Reviews (Pending/Approved)</option>
                                 <option value="pending">Filter by Status: Pending Approval</option>
                                 <option value="approved">Filter by Status: Approved</option>
-                                <option value="deleted">Filter by Status: Recycle Bin (Deleted)</option> {/* <--- THIS OPTION */}
+                                {/* REMOVED: Deleted reviews option */}
                             </Form.Select>
                         </Col>
                     </Row>
@@ -369,41 +384,28 @@ const ReviewManagement = () => {
                                                 </Button>
                                             )}
                                             
-                                            {review.status === 'deleted' ? (
-                                                // Recycle Bin Actions
-                                                <Button 
-                                                    variant="warning" 
-                                                    size="sm" 
-                                                    onClick={() => handleRestore(review)} 
-                                                    className="me-2 mb-1 text-dark"
-                                                    title="Restore Review"
-                                                >
-                                                    <FiRotateCw size={14} /> Restore
-                                                </Button>
-                                            ) : (
-                                                // Live Actions (Pending or Approved)
-                                                <>
-                                                    <Button 
-                                                        variant="info" 
-                                                        size="sm" 
-                                                        onClick={() => handleReplyClick(review)} 
-                                                        className="me-2 mb-1 text-white"
-                                                        title="Add/Edit Admin Reply"
-                                                    >
-                                                        <FiMessageSquare size={14} /> Reply
-                                                    </Button>
-                                                    <Button 
-                                                        variant="outline-danger" 
-                                                        size="sm" 
-                                                        onClick={() => handleDelete(review)} // Soft Delete
-                                                        className="mb-1"
-                                                        title="Move to Recycle Bin (Soft Delete)"
-                                                    >
-                                                        <FiTrash2 size={14} /> Delete
-                                                    </Button>
-                                                </>
-                                            )}
+                                            {/* Restore button hata diya gaya hai, ab sirf Live Actions hain */}
                                             
+                                            <>
+                                                <Button 
+                                                    variant="info" 
+                                                    size="sm" 
+                                                    onClick={() => handleReplyClick(review)} 
+                                                    className="me-2 mb-1 text-white"
+                                                    title="Add/Edit Admin Reply"
+                                                >
+                                                    <FiMessageSquare size={14} /> Reply
+                                                </Button>
+                                                <Button 
+                                                    variant="outline-danger" 
+                                                    size="sm" 
+                                                    onClick={() => handleDelete(review)} // Soft Delete
+                                                    className="mb-1"
+                                                    title="Move to Recycle Bin (Soft Delete)"
+                                                >
+                                                    <FiTrash2 size={14} /> Delete
+                                                </Button>
+                                            </>
                                         </td>
                                     </tr>
                                 ))}
@@ -412,7 +414,7 @@ const ReviewManagement = () => {
                     ) : (
                         <Alert variant="info" className="text-center">
                             <FiSearch size={24} className="me-2" /> 
-                            {filterStatus === 'deleted' ? 'The Recycle Bin is empty or no reviews match your search.' : 'No reviews match your current search or filter criteria.'}
+                            No reviews match your current search or filter criteria.
                         </Alert>
                     )}
                 </Card.Body>
