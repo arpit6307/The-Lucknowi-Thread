@@ -1,130 +1,476 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Card, Spinner, Alert, Table, Button, Badge } from 'react-bootstrap';
-import { collectionGroup, query, getDocs, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+// Bootstrap Components
+import { Container, Card, Alert, Table, Button, Badge, Row, Col, Form, InputGroup, Modal } from 'react-bootstrap';
+// Firebase
+import { collectionGroup, query, getDocs, doc, updateDoc, collection } from 'firebase/firestore'; // deleteDoc removed as we use soft delete
 import { db } from '../../firebase';
+// Custom Components (assuming these exist and work)
 import CustomLoader from '../../components/CustomLoader';
 import StarRating from '../../components/StarRating';
+// SVG Icons (Requires: npm install react-icons)
+import { 
+    FiSearch, FiCheckCircle, FiClock, FiTrash2, FiMessageSquare, 
+    FiTrendingUp, FiLayers, FiStar, FiUser, FiPackage, FiEye, FiRotateCw 
+} from 'react-icons/fi';
+
+// --- Review Details Modal (Unchanged for View) ---
+const ReviewDetailsModal = ({ review, show, onHide }) => {
+    if (!review) return null;
+
+    return (
+        <Modal show={show} onHide={onHide} centered size="lg">
+            <Modal.Header closeButton className="bg-dark text-white">
+                <Modal.Title><FiEye className="me-2" /> Complete Review Details</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Row className="mb-3">
+                    <Col><strong>Product:</strong> {review.productName}</Col>
+                    <Col><strong>Customer:</strong> {review.authorName}</Col>
+                    <Col><strong>Rating:</strong> <StarRating rating={review.rating} readOnly /></Col>
+                </Row>
+                <Card className="shadow-sm mb-3">
+                    <Card.Header className="bg-light fw-bold">Customer Review</Card.Header>
+                    <Card.Body>
+                        <p className="fst-italic">"{review.text}"</p>
+                    </Card.Body>
+                </Card>
+
+                {/* Admin Reply Section */}
+                <Card className="border-primary">
+                    <Card.Header className="bg-primary text-white fw-bold">Admin Reply</Card.Header>
+                    <Card.Body>
+                        {review.adminReply ? (
+                            <p className="text-success">{review.adminReply}</p>
+                        ) : (
+                            <Alert variant="warning" className="mb-0 small">No admin reply submitted yet.</Alert>
+                        )}
+                    </Card.Body>
+                </Card>
+
+            </Modal.Body>
+            <Modal.Footer>
+                <Button variant="secondary" onClick={onHide}>Close</Button>
+            </Modal.Footer>
+        </Modal>
+    );
+};
+// ---------------------------------------------
+
 
 const ReviewManagement = () => {
+    // --- State Management ---
     const [allReviews, setAllReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    const fetchAllReviews = useCallback(async () => {
+    // UI/Filter State
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [stats, setStats] = useState({ total: 0, pending: 0, averageRating: 0 });
+    
+    // Admin Reply Modal State
+    const [showReplyModal, setShowReplyModal] = useState(false);
+    const [currentReview, setCurrentReview] = useState(null);
+    const [replyText, setReplyText] = useState('');
+
+    // State for View Details Modal
+    const [showReviewModal, setShowReviewModal] = useState(false);
+    const [selectedReview, setSelectedReview] = useState(null);
+
+
+    // --- Data Fetching Logic (Optimized) ---
+    const fetchAllData = useCallback(async () => {
         setLoading(true);
         try {
+            // Step 1: Fetch all products ONCE
+            const productsRef = collection(db, 'products');
+            const productsSnap = await getDocs(productsRef);
+            const productsMap = new Map();
+            productsSnap.forEach(doc => {
+                productsMap.set(doc.id, doc.data().name);
+            });
+
+            // Step 2: Fetch all reviews
             const reviewsQuery = query(collectionGroup(db, 'reviews'));
             const reviewsSnapshot = await getDocs(reviewsQuery);
             
-            const reviewsList = [];
-            for (const reviewDoc of reviewsSnapshot.docs) {
+            let totalRating = 0;
+            let pendingCount = 0;
+            const reviewsList = reviewsSnapshot.docs.map(reviewDoc => {
                 const reviewData = reviewDoc.data();
                 const productId = reviewDoc.ref.parent.parent.id;
-                
-                // Har review ke liye product ka naam fetch karein
-                const productRef = doc(db, 'products', productId);
-                const productSnap = await getDoc(productRef);
-                
-                reviewsList.push({
+
+                totalRating += reviewData.rating || 0;
+                // Count pending reviews (excluding deleted)
+                if (reviewData.status === 'pending') {
+                    pendingCount++;
+                }
+
+                return {
                     id: reviewDoc.id,
                     productId: productId,
-                    productName: productSnap.exists() ? productSnap.data().name : 'Unknown Product',
+                    productName: productsMap.get(productId) || 'Unknown Product (ID: ' + productId + ')',
                     ...reviewData
-                });
-            }
+                };
+            });
             
-            // Reviews ko taareekh ke hisab se sort karein
-            reviewsList.sort((a, b) => b.timestamp.toDate() - a.timestamp.toDate());
+            reviewsList.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
             setAllReviews(reviewsList);
 
+            // Calculate stats
+            const approvedReviews = reviewsList.filter(r => r.status === 'approved');
+            const totalApprovedRating = approvedReviews.reduce((sum, r) => sum + r.rating, 0);
+
+            setStats({
+                total: reviewsList.length,
+                pending: pendingCount,
+                averageRating: approvedReviews.length > 0 ? (totalApprovedRating / approvedReviews.length) : 0
+            });
+
         } catch (err) {
-            console.error("Error fetching reviews:", err);
-            setError('Could not load reviews. Please check Firestore security rules for collectionGroup queries.');
+            console.error("Error fetching data:", err);
+            setError('Could not load review data. Please check connection and permissions.');
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchAllReviews();
-    }, [fetchAllReviews]);
+        fetchAllData();
+    }, [fetchAllData]);
 
+    // --- Memoized Filtering (Performance) ---
+    const filteredReviews = useMemo(() => {
+        return allReviews.filter(review => {
+            // If filter is 'all', show all except 'deleted' for main view
+            const matchesStatus = filterStatus === 'all' 
+                ? review.status !== 'deleted' 
+                // Specific filter shows only that status (including 'deleted')
+                : review.status === filterStatus; 
+
+            const lowerSearch = searchTerm.toLowerCase();
+            const matchesSearch = searchTerm === '' ||
+                review.productName.toLowerCase().includes(lowerSearch) ||
+                review.authorName.toLowerCase().includes(lowerSearch) ||
+                (review.text?.toLowerCase().includes(lowerSearch));
+            return matchesStatus && matchesSearch;
+        });
+    }, [allReviews, searchTerm, filterStatus]);
+
+
+    // --- Action Handlers ---
     const handleApprove = async (review) => {
-        const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
-        await updateDoc(reviewRef, { status: 'approved' });
-        fetchAllReviews(); // List ko refresh karein
+        try {
+            const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
+            await updateDoc(reviewRef, { status: 'approved' });
+            fetchAllData(); 
+        } catch(e) {
+            setError("Approval failed.");
+        }
     };
 
+    // **SOFT DELETE Feature**
     const handleDelete = async (review) => {
-        if (window.confirm("Are you sure you want to delete this review?")) {
-            const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
-            await deleteDoc(reviewRef);
-            fetchAllReviews(); // List ko refresh karein
+        if (window.confirm(`Are you sure you want to move the review by ${review.authorName} to the Recycle Bin? It can be restored later.`)) {
+            try {
+                const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
+                // Soft Delete: Change status to 'deleted'
+                await updateDoc(reviewRef, { status: 'deleted' }); 
+                fetchAllData(); 
+            } catch(e) {
+                setError("Soft Delete failed.");
+            }
         }
     };
     
+    // **RESTORE Feature**
+    const handleRestore = async (review) => {
+        if (window.confirm(`Are you sure you want to restore the review by ${review.authorName}? It will be set to Pending status.`)) {
+            try {
+                const reviewRef = doc(db, 'products', review.productId, 'reviews', review.id);
+                // Restore: Change status back to 'pending'
+                await updateDoc(reviewRef, { status: 'pending' }); 
+                fetchAllData(); 
+            } catch(e) {
+                setError("Restore failed.");
+            }
+        }
+    };
+    
+    // Admin Reply
+    const handleReplyClick = (review) => {
+        setCurrentReview(review);
+        setReplyText(review.adminReply || ''); 
+        setShowReplyModal(true);
+    };
+
+    const handleReplySubmit = async () => {
+        if (!replyText || !currentReview) return;
+        try {
+            const reviewRef = doc(db, 'products', currentReview.productId, 'reviews', currentReview.id);
+            await updateDoc(reviewRef, { adminReply: replyText });
+            setShowReplyModal(false);
+            setReplyText('');
+            setCurrentReview(null);
+            fetchAllData();
+        } catch(e) {
+            setError("Reply submission failed.");
+        }
+    };
+    
+    // View Details
+    const handleViewReview = (review) => {
+        setSelectedReview(review);
+        setShowReviewModal(true);
+    };
+    
+    // --- Utility Function for Status Badge ---
     const getStatusBadge = (status) => {
         switch (status) {
-          case 'pending': return <Badge bg="warning">Pending</Badge>;
-          case 'approved': return <Badge bg="success">Approved</Badge>;
-          default: return <Badge bg="secondary">{status}</Badge>;
+            case 'approved':
+                return <Badge bg="success" className="d-flex align-items-center"><FiCheckCircle className="me-1" size={14} /> Approved</Badge>;
+            case 'pending':
+                return <Badge bg="warning" text="dark" className="d-flex align-items-center"><FiClock className="me-1" size={14} /> Pending</Badge>;
+            case 'deleted':
+                return <Badge bg="secondary" className="d-flex align-items-center"><FiTrash2 className="me-1" size={14} /> Deleted</Badge>;
+            default:
+                return <Badge bg="secondary">{status}</Badge>;
         }
     };
 
-    if (loading) {
-        return <CustomLoader message="Loading All Reviews..." />;
-    }
-
-    if (error) {
-        return <Alert variant="danger">{error}</Alert>;
-    }
+    // --- Render Logic ---
+    if (loading) return <CustomLoader message="Loading Review Dashboard..." />;
+    if (error) return <Alert variant="danger" className="text-center mt-5">{error}</Alert>;
 
     return (
-        <Container fluid>
-            <h3 className="mb-4">Product Review Management</h3>
-            <Card>
+        <Container fluid className="p-4">
+            <h2 className="mb-5 text-primary fw-bold">Product Review Management <FiLayers className="ms-2" /></h2>
+            
+            {/* --- 1. Analytics Dashboard Cards --- */}
+            <Row className="mb-4 g-4">
+                <Col lg={4} md={6}>
+                    <Card className="shadow-sm border-0 h-100 bg-primary text-white">
+                        <Card.Body className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <Card.Title className="fs-1 fw-bold">{allReviews.length}</Card.Title>
+                                <Card.Text className="text-opacity-75">All Reviews (Inc. Deleted)</Card.Text>
+                            </div>
+                            <FiTrendingUp size={36} />
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col lg={4} md={6}>
+                    <Card className="shadow-sm border-0 h-100 bg-warning text-dark">
+                        <Card.Body className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <Card.Title className="fs-1 fw-bold">{stats.pending}</Card.Title>
+                                <Card.Text className="text-opacity-75">Reviews Pending Approval</Card.Text>
+                            </div>
+                            <FiClock size={36} />
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col lg={4} md={6}>
+                    <Card className="shadow-sm border-0 h-100 bg-info text-white">
+                        <Card.Body className="d-flex justify-content-between align-items-center">
+                            <div>
+                                <Card.Title className="fs-1 fw-bold">{stats.averageRating.toFixed(2)}</Card.Title>
+                                <Card.Text className="text-opacity-75"><FiStar className="me-1" /> Average Rating (Approved)</Card.Text>
+                            </div>
+                            <FiStar size={36} />
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Card className="shadow-lg border-0">
+                <Card.Header className="bg-light border-bottom d-flex justify-content-between align-items-center">
+                    <Card.Title className="mb-0 text-dark">
+                        {filterStatus === 'deleted' ? 'Review Recycle Bin' : 'Live Review List'} 
+                        ({filteredReviews.length} results)
+                    </Card.Title>
+                    <Badge bg="secondary" className="fs-6">Total Reviews: {allReviews.length}</Badge>
+                </Card.Header>
                 <Card.Body>
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Customer</th>
-                                <th>Rating</th>
-                                <th>Review</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {allReviews.map(review => (
-                                <tr key={review.id}>
-                                    <td>{review.productName}</td>
-                                    <td>{review.authorName}</td>
-                                    <td><StarRating rating={review.rating} readOnly={true} /></td>
-                                    <td>{review.text}</td>
-                                    <td>{review.timestamp.toDate().toLocaleDateString()}</td>
-                                    <td>{getStatusBadge(review.status)}</td>
-                                    <td>
-                                        {review.status === 'pending' && (
-                                            <Button variant="success" size="sm" onClick={() => handleApprove(review)} className="me-2">
-                                                Approve
-                                            </Button>
-                                        )}
-                                        <Button variant="outline-danger" size="sm" onClick={() => handleDelete(review)}>
-                                            Delete
-                                        </Button>
-                                    </td>
+                    {/* --- 2. Search and Filter Controls (Updated Filter) --- */}
+                    <Row className="mb-4 align-items-center">
+                        <Col lg={8} className="mb-3 mb-lg-0">
+                            <InputGroup>
+                                <InputGroup.Text className="bg-white border-end-0"><FiSearch /></InputGroup.Text>
+                                <Form.Control 
+                                    placeholder="Search by Product, Customer Name, or Review Text..." 
+                                    value={searchTerm} 
+                                    onChange={(e) => setSearchTerm(e.target.value)} 
+                                    className="border-start-0"
+                                />
+                            </InputGroup>
+                        </Col>
+                        <Col lg={4}>
+                            <Form.Select 
+                                value={filterStatus} 
+                                onChange={(e) => setFilterStatus(e.target.value)}
+                                className="shadow-sm"
+                            >
+                                <option value="all">Filter by Status: Live Reviews (Pending/Approved)</option>
+                                <option value="pending">Filter by Status: Pending Approval</option>
+                                <option value="approved">Filter by Status: Approved</option>
+                                <option value="deleted">Filter by Status: Recycle Bin (Deleted)</option> {/* <--- THIS OPTION */}
+                            </Form.Select>
+                        </Col>
+                    </Row>
+
+                    {/* --- 3. Reviews Table --- */}
+                    {filteredReviews.length > 0 ? (
+                        <Table striped bordered hover responsive className="align-middle">
+                            <thead className="table-dark">
+                                <tr>
+                                    <th style={{ width: '15%' }}><FiPackage className="me-1"/> Product</th>
+                                    <th style={{ width: '15%' }}><FiUser className="me-1"/> Customer</th>
+                                    <th style={{ width: '10%' }}>Rating</th>
+                                    <th style={{ width: '10%' }}>Details</th>
+                                    <th style={{ width: '15%' }}>Date</th>
+                                    <th style={{ width: '10%' }}>Status</th>
+                                    <th style={{ width: '25%' }}>Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                    {allReviews.length === 0 && <p className="text-center text-muted mt-3">No reviews found.</p>}
+                            </thead>
+                            <tbody>
+                                {filteredReviews.map(review => (
+                                    <tr key={review.id} className={review.status === 'deleted' ? 'table-secondary' : ''}>
+                                        <td className="fw-bold">{review.productName}</td>
+                                        <td>{review.authorName}</td>
+                                        <td><StarRating rating={review.rating} readOnly /></td>
+                                        
+                                        {/* COMPACT VIEW: Only show View button */}
+                                        <td>
+                                            <Button 
+                                                variant="outline-secondary" 
+                                                size="sm" 
+                                                onClick={() => handleViewReview(review)}
+                                                className="d-flex align-items-center"
+                                            >
+                                                <FiEye size={14} className="me-1"/> View Review
+                                            </Button>
+                                            {review.adminReply && <Badge bg="primary" className="mt-1">Replied</Badge>}
+                                        </td>
+                                        
+                                        <td className="small text-nowrap">{review.timestamp?.toDate().toLocaleDateString() || 'N/A'}</td>
+                                        <td>{getStatusBadge(review.status)}</td>
+                                        <td className="text-nowrap">
+                                            {/* ACTIONS BASED ON STATUS */}
+                                            {review.status === 'pending' && (
+                                                <Button 
+                                                    variant="success" 
+                                                    size="sm" 
+                                                    onClick={() => handleApprove(review)} 
+                                                    className="me-2 mb-1"
+                                                    title="Approve Review"
+                                                >
+                                                    <FiCheckCircle size={14} /> Approve
+                                                </Button>
+                                            )}
+                                            
+                                            {review.status === 'deleted' ? (
+                                                // Recycle Bin Actions
+                                                <Button 
+                                                    variant="warning" 
+                                                    size="sm" 
+                                                    onClick={() => handleRestore(review)} 
+                                                    className="me-2 mb-1 text-dark"
+                                                    title="Restore Review"
+                                                >
+                                                    <FiRotateCw size={14} /> Restore
+                                                </Button>
+                                            ) : (
+                                                // Live Actions (Pending or Approved)
+                                                <>
+                                                    <Button 
+                                                        variant="info" 
+                                                        size="sm" 
+                                                        onClick={() => handleReplyClick(review)} 
+                                                        className="me-2 mb-1 text-white"
+                                                        title="Add/Edit Admin Reply"
+                                                    >
+                                                        <FiMessageSquare size={14} /> Reply
+                                                    </Button>
+                                                    <Button 
+                                                        variant="outline-danger" 
+                                                        size="sm" 
+                                                        onClick={() => handleDelete(review)} // Soft Delete
+                                                        className="mb-1"
+                                                        title="Move to Recycle Bin (Soft Delete)"
+                                                    >
+                                                        <FiTrash2 size={14} /> Delete
+                                                    </Button>
+                                                </>
+                                            )}
+                                            
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    ) : (
+                        <Alert variant="info" className="text-center">
+                            <FiSearch size={24} className="me-2" /> 
+                            {filterStatus === 'deleted' ? 'The Recycle Bin is empty or no reviews match your search.' : 'No reviews match your current search or filter criteria.'}
+                        </Alert>
+                    )}
                 </Card.Body>
             </Card>
+
+            {/* --- 4. Modals (Reply and View) --- */}
+            
+            {/* Admin Reply Modal */}
+            <Modal show={showReplyModal} onHide={() => setShowReplyModal(false)} centered>
+                <Modal.Header closeButton className="bg-primary text-white">
+                    <Modal.Title><FiMessageSquare className="me-2" /> Reply to Review</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {currentReview && (
+                        <>
+                            <p><strong>Customer:</strong> {currentReview.authorName} on **{currentReview.productName}**</p>
+                            <div className="border border-info p-3 rounded mb-3 bg-light">
+                                <strong>Review:</strong> 
+                                <span className="d-block mt-1 fst-italic">"{currentReview.text}"</span>
+                                <StarRating rating={currentReview.rating} readOnly className="mt-2" />
+                            </div>
+                        </>
+                    )}
+                    
+                    <Form.Group>
+                        <Form.Label className="fw-bold">Your Public Reply (Max 500 characters):</Form.Label>
+                        <Form.Control 
+                            as="textarea" 
+                            rows={4} 
+                            value={replyText} 
+                            onChange={(e) => setReplyText(e.target.value)} 
+                            placeholder="Write your professional and public reply here..." 
+                            maxLength={500}
+                        />
+                        <Form.Text className="text-muted">
+                            {replyText.length} / 500 characters
+                        </Form.Text>
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="outline-secondary" onClick={() => setShowReplyModal(false)}>Cancel</Button>
+                    <Button variant="primary" onClick={handleReplySubmit} disabled={!replyText}>
+                        <FiCheckCircle className="me-1" /> {currentReview?.adminReply ? 'Update Reply' : 'Submit Reply'}
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Review Details Modal */}
+            <ReviewDetailsModal 
+                review={selectedReview} 
+                show={showReviewModal} 
+                onHide={() => {
+                    setShowReviewModal(false);
+                    setSelectedReview(null);
+                }} 
+            />
         </Container>
     );
 };
 
 export default ReviewManagement;
-
