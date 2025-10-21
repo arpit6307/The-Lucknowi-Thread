@@ -1,21 +1,23 @@
 /**
  * =================================================================
- * ProductManagement.jsx - V21 "Growth Command Center"
+ * ProductManagement.jsx - V24 "Growth Command Center" (FINAL JS ALERT FIX)
  * =================================================================
- * ENHANCEMENT:
- * - Page title made highly impactful (Growth Command Center).
- * - All icons are clean SVGs and code logic is preserved.
+ * MODIFICATION:
+ * - ALL react-hot-toast dependencies for DELETE have been replaced with 
+ * simple, guaranteed window.alert() and window.confirm() for debugging.
+ * - This confirms if the click event is firing and if the Firestore operation is succeeding.
  * =================================================================
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+// Note: toast (react-hot-toast) is still imported, but delete logic uses native alerts for debugging.
 import { db } from '/src/firebase.js'; 
 import { collection, getDocs, addDoc, updateDoc, doc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Container, Table, Button, Modal, Form, FloatingLabel, Alert, Spinner, Row, Col, InputGroup, Badge, Tabs, Tab } from 'react-bootstrap';
-import { toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast'; // Still imported for Add/Edit/AI, but not for Delete
 
 // ===============================================
-// CLEANED, GLITCH-FREE SVG ICONS (Final Set)
+// ICONS aur Helper Components (Code is same)
 // ===============================================
 const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>;
 const DeleteIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
@@ -29,7 +31,6 @@ const InventoryIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" h
 const InfoIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>;
 
 
-// --- Helper Component: Product Image Placeholder ---
 const ProductPlaceholder = () => (
     <div className="d-flex align-items-center justify-content-center bg-light text-muted" style={{ width: '100%', height: '150px', borderRadius: '0.5rem', border: '1px solid var(--bs-gray-300)' }}>
         <GridIcon width="32" height="32" />
@@ -81,7 +82,7 @@ const ProductManagement = () => {
         const filtered = allProducts.filter(product => product.status === 'active' && (
             product.name.toLowerCase().includes(lowerCaseSearch) ||
             product.category.toLowerCase().includes(lowerCaseSearch) ||
-            product.id.toLowerCase().includes(lowerCaseSearch)
+            product.id?.toLowerCase().includes(lowerCaseSearch) 
         ));
         setProducts(filtered);
     }, [searchTerm, allProducts]); 
@@ -189,7 +190,7 @@ const ProductManagement = () => {
         delete finalProductData.id; 
 
         try {
-            if (isEditing && currentProduct) {
+            if (isEditing && currentProduct?.id) {
                 await updateDoc(doc(db, 'products', currentProduct.id), finalProductData);
                 toast.success("Product updated successfully!");
             } else {
@@ -206,28 +207,51 @@ const ProductManagement = () => {
         }
     };
     
+    // =======================================================
+    // SOFT DELETE FUNCTIONS (NATIVE ALERT DEBUGGING)
+    // =======================================================
     const performSoftDelete = async (id) => {
+        if (!id) {
+            console.error("Soft Delete Error: Product ID is missing.");
+            window.alert("Critical Error: Cannot delete product without an ID.");
+            return;
+        }
+        
+        // CRITICAL DIAGNOSTIC STEP
+        console.log("------------------------------------------------------------------");
+        console.log("ATTEMPTING FIREBASE UPDATE FOR PRODUCT ID:", id); 
+        console.log("------------------------------------------------------------------");
+        
         try {
+            // Soft Delete Operation
             await updateDoc(doc(db, 'products', id), { status: 'deleted' });
-            toast.success('Product moved to Recycle Bin!');
-            fetchProducts();
+            
+            // Success messages (NATIVE ALERT)
+            window.alert('SUCCESS: Product moved to Recycle Bin!');
+            console.log(`✅ Soft delete successful for ${id}.`);
+            
+            fetchProducts(); 
         } catch (error) {
-            console.error("Error deleting product: ", error);
-            toast.error("Failed to delete product.");
+            // Failure messages (NATIVE ALERT)
+            console.error("❌ Soft Delete Operation Failed: ", error);
+            
+            const errorMessage = error.message || "Unknown error occurred.";
+            window.alert(`FAILURE: Soft Delete Failed. Check Console for details. Error: ${errorMessage.includes("permission denied") ? "PERMISSION DENIED!" : errorMessage}`);
         }
     };
     
     const handleSoftDelete = (id) => {
-        toast((t) => (
-            <span className="toast-confirmation d-flex flex-column align-items-center">
-                <span className="mb-2">Move to Recycle Bin?</span>
-                <div className='d-flex gap-2'>
-                    <Button variant="danger" size="sm" onClick={() => { performSoftDelete(id); toast.dismiss(t.id); }}>Confirm</Button>
-                    <Button variant="secondary" size="sm" onClick={() => toast.dismiss(t.id)}>Cancel</Button>
-                </div>
-            </span>
-        ), { duration: 6000 });
+        // CONFIRMATION (NATIVE ALERT)
+        console.log("CLICK DETECTED: Opening Delete Confirmation Alert for ID:", id);
+        const isConfirmed = window.confirm(`Are you sure you want to move product ${id} to Recycle Bin?`);
+
+        if (isConfirmed) {
+            performSoftDelete(id);
+        } else {
+            console.log("Delete cancelled by user.");
+        }
     };
+
 
     // --- Helper Component: Image Preview in Modal ---
     const ModalImagePreview = () => {
@@ -328,7 +352,13 @@ const ProductManagement = () => {
                                 <td>{product.isBestSeller ? <Badge bg="success">Yes</Badge> : 'No'}</td>
                                 <td style={{ minWidth: '120px' }}>
                                     <Button variant="outline-primary" size="sm" onClick={() => handleShowModal(product)} className="me-2" title="Edit Product"><EditIcon /></Button>
-                                    <Button variant="outline-danger" size="sm" onClick={() => handleSoftDelete(product.id)} title="Move to Recycle Bin"><DeleteIcon /></Button>
+                                    <Button 
+                                        variant="outline-danger" 
+                                        size="sm" 
+                                        onClick={() => handleSoftDelete(product.id)} 
+                                        title="Move to Recycle Bin">
+                                        <DeleteIcon />
+                                    </Button>
                                 </td>
                             </tr>
                         ))}
